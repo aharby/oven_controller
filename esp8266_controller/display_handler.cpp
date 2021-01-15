@@ -19,7 +19,6 @@ control = 0;
 
 mode = 0;
 
-
 timerState = false;
 
 //timer alarm going off or not
@@ -29,6 +28,11 @@ timerAlarmState = false;
 timerHours = 0;
 timerMins = 0;
 timerSecs = 0;
+
+//temporary hours/minutes/seconds of set timer (start at 0)
+tempTimerHours = 0;
+tempTimerMins = 0;
+tempTimerSecs = 0;
 
 //for clearing out lcd
 blank = "               ";
@@ -74,6 +78,19 @@ void DisplayHandler::changeControl() {
 	if(control) {
 		control = false;
 		lcd.noCursor();
+		if(mode == TEMP_MODE) {
+			tempControlTemperature = controlTemperature;
+      if(controlTemperature == 0) {
+        cursorPositionTempX = 9;
+      } else {
+        cursorPositionTempX = 9 + String(controlTemperature).length();
+      }
+		}
+		if(mode == TIMER_MODE) {
+			tempTimerHours = 0;
+			tempTimerMins = 0;
+			tempTimerSecs = 0;
+		}
 	} else {
 		control = true;
 		if(mode == TEMP_MODE) {
@@ -127,6 +144,13 @@ void DisplayHandler::timerCount() {
 void DisplayHandler::printTimer() {
 
 	sprintf(timer, "%02d:%02d:%02d", timerHours, timerMins, timerSecs);
+
+}
+
+//format timer output
+void DisplayHandler::printTempTimer() {
+
+  sprintf(tempTimer, "%02d:%02d:%02d", tempTimerHours, tempTimerMins, tempTimerSecs);
 
 }
 
@@ -196,11 +220,12 @@ void DisplayHandler::refreshScreen() {
 	case TEMP_MODE: {
    
 		if(control) {
-			writeToLCD("Tmp lim: " + String(controlTemperature) + " ",
+			writeToLCD("Tmp lim: " + String(tempControlTemperature) + "              ",
 					"");
 			break;
 		} else {
-			writeToLCD("Tmp: " + String(currentTemperature), "S1=" +String(manualSwitch)+ ", " +"Relay: " + String(relayState));
+			writeToLCD("Tmp: " + String(currentTemperature) + "               ", 
+			    "S1=" +String(manualSwitch)+ ", " +"Relay: " + String(relayState));
 			break;
 		}
 
@@ -208,12 +233,13 @@ void DisplayHandler::refreshScreen() {
 
 	case TIMER_MODE: {
 
-		sprintf(timer, "%02d:%02d:%02d", timerHours, timerMins, timerSecs);
 		if(control) {
-			writeToLCD("Set timer:", timer);
+      printTempTimer();
+			writeToLCD("Set timer:", tempTimer);
 			break;
 		} else {
-			writeToLCD("Timer: " + String(timerState), timer);
+      printTimer();
+			writeToLCD("Timer: " + String(timerState) + "   ", timer);
 			break;
 		}
 
@@ -237,8 +263,8 @@ void DisplayHandler::setDigit(char num) {
 			//by transforming char value into correct int digit
 			case 0: {
 
-				int tempHours = (((int) num + 2) % 50) * 10 + timerHours % 10;
-				timerHours = tempHours;
+				int tempHours = (((int) num + 2) % 50) * 10 + tempTimerHours % 10;
+				tempTimerHours = tempHours;
 				break;
 
 			}
@@ -247,8 +273,8 @@ void DisplayHandler::setDigit(char num) {
 			//by transforming char value into correct int digit
 			case 1: {
 
-				int tempHours = (timerHours / 10) * 10 + ((int) num + 2) % 50;
-				timerHours = tempHours;
+				int tempHours = (tempTimerHours / 10) * 10 + ((int) num + 2) % 50;
+				tempTimerHours = tempHours;
 				break;
 
 			}
@@ -258,8 +284,8 @@ void DisplayHandler::setDigit(char num) {
 			case 3: {
 				//limit the possible input by up to 5 to avoid overflow
 				if (num >= '0' && num <= '5') {
-					int tempMins = (((int) num + 2) % 50) * 10 + timerMins % 10;
-					timerMins = tempMins;
+					int tempMins = (((int) num + 2) % 50) * 10 + tempTimerMins % 10;
+					tempTimerMins = tempMins;
 				}
 				break;
 
@@ -269,8 +295,8 @@ void DisplayHandler::setDigit(char num) {
 			//by transforming char value into correct int digit
 			case 4: {
 
-				int tempMins = (timerMins / 10) * 10 + ((int) num + 2) % 50;
-				timerMins = tempMins;
+				int tempMins = (tempTimerMins / 10) * 10 + ((int) num + 2) % 50;
+				tempTimerMins = tempMins;
 				break;
 
 			}
@@ -280,8 +306,8 @@ void DisplayHandler::setDigit(char num) {
 			case 6: {
 				//limit the possible input by up to 5 to avoid overflow
 				if (num >= '0' && num <= '5') {
-					int tempSecs = (((int) num + 2) % 50) * 10 + timerSecs % 10;
-					timerSecs = tempSecs;
+					int tempSecs = (((int) num + 2) % 50) * 10 + tempTimerSecs % 10;
+					tempTimerSecs = tempSecs;
 				}
 				break;
 
@@ -291,8 +317,8 @@ void DisplayHandler::setDigit(char num) {
 			//by transforming char value into correct int digit
 			case 7: {
 
-				int tempSecs = (timerSecs / 10) * 10 + ((int) num + 2) % 50;
-				timerSecs = tempSecs;
+				int tempSecs = (tempTimerSecs / 10) * 10 + ((int) num + 2) % 50;
+				tempTimerSecs = tempSecs;
 				break;
 
 			}
@@ -300,7 +326,7 @@ void DisplayHandler::setDigit(char num) {
 	} else {
 
 		//multiply current control temperature by 10 and add new input
-		controlTemperature = controlTemperature * 10 + (((int) num + 2) % 50);
+		tempControlTemperature = tempControlTemperature * 10 + (((int) num + 2) % 50);
 		cursorPositionTempX++;
 
 	}
@@ -356,7 +382,7 @@ void DisplayHandler::checkKeys() {
 		}
 
 		//set D key for manually turning relay off/on
-		if (key == MANUAL_OFF) {
+		if (key == MANUAL_OFF && control == 0) {
 			if(manualSwitch) {
 				manualSwitch = 0;
 			} else {
@@ -364,11 +390,25 @@ void DisplayHandler::checkKeys() {
 			}
 		}
 
+		if (key == MANUAL_OFF && control == 1) {
+			if(mode == TEMP_MODE) {
+					controlTemperature = tempControlTemperature;
+					changeControl();
+			} else {
+					timerHours = tempTimerHours;
+					timerMins = tempTimerMins;
+					timerSecs = tempTimerSecs;
+					changeControl();
+			}
+		}
+
 		//set * key for deleting rightmost digit of control temperature
 		//while control temperature mode is on
 		if (key == CURSOR_MOVE_LEFT && mode == TEMP_MODE) {
-			controlTemperature /= 10;
-			cursorPositionTempX--;
+			tempControlTemperature /= 10;
+      if(cursorPositionTempX > 9) {
+        cursorPositionTempX--;
+      }
 			refreshScreen();
 		}
 
@@ -408,7 +448,7 @@ void DisplayHandler::checkKeys() {
 		if (key >= INPUT_LOWER_BOUNDARY && key <= INPUT_UPPER_BOUNDARY
 				&& control) {
 			setDigit(key);
-			printTimer();
+			printTempTimer();
 			refreshScreen();
 		}
 	}

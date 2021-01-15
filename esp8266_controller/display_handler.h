@@ -50,16 +50,24 @@ bool timerState ;
 
 //timer alarm going off or not
 bool timerAlarmState;
+//temporary array for timer values
+char tempTimer[8];
 //array for timer values
 char timer[8];
+//temporary hours/minutes/seconds of set timer
+int tempTimerHours;
+int tempTimerMins ;
+int tempTimerSecs;
 //hours/minutes/seconds of set timer (start at 0)
 int timerHours;
 int timerMins ;
 int timerSecs;
 //current temperature reading
 float currentTemperature;
+//temporary value for temperature limit
+int tempControlTemperature;
 //temperature limit set by user
-float controlTemperature;
+int controlTemperature;
 //represents the relay state
 
 int relayState;
@@ -99,6 +107,8 @@ void changeMode();
 
 //format timer output
 void printTimer() ;
+
+void printTempTimer() ;
 
 //write data to lcd
 void writeToLCD(String firstRow, String secondRow);
